@@ -80,7 +80,9 @@ export default function fileFetch() {
 
      // Call fetchDataAndInsertIntoDatabase at regular intervals
      setInterval(() => {
-        const filePath: string = './filtered_requests.log';
+        let filePath:string
+        if(process.platform === "linux") filePath = './filtered_requests.log';
+        else filePath = '.\\filtered_requests.log';
         //const filePath: string = '..\\ks\\serveurRequete\\filtered_requests.log';
         //const filePath: string = '..\\filtered_requests.log';
         fetchDataAndInsertIntoDatabase(filePath);

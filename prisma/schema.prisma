@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_user String @unique
+  nom String 
+  sessions Session[]
+}
+
+model Session {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_session String @unique
+  date String 
+  nb_students Int
+  name String
+  user User @relation(fields :  [userId], references: [id_user])
+  userId String 
+  current_slide Int
+}
+
+model Data_Question {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_session     String
+  id_question String @unique
+  num_slide     Int
+  question_url String //picture url
+  list   Int[]   //stock le nombre de repetition de chaque answers
+  list_tdr Float[]
+  answers_id Int[]
+  right_answers Int[]
+  type String
+}
+
+model Data_Notes {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_session      String
+  id_notes  String  @unique
+  num_slide     Int
+  list   String[]
+  somme Float
+}
+
+model Data_Fatigue {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_session      String
+  id_fatigue  String  @unique
+  num_slide     Int
+  list   Int[]
+  average Int 
+}
+
+model Data_Suivi_RT {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_session      String
+  id_slides String []
+  num_slide     Int
+  id_slide String
+  list   Int[]
+  index Int[]
+}
+
+model Data_Suivi_PS {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_session      String
+  num_slide     Int
+  index Int[]
+  list   Int[]
+  date String
+}
+
+model Time {
+  id_session      String   @id @default(auto()) @map("_id") @db.ObjectId
+  action_verb String @unique
+  action_done String 
+}

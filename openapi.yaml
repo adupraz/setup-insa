@@ -1,0 +1,263 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: axel.dupraz@insa-rennes.fr
+    url: https://www.insa-rennes.fr/index.html
+  description: |
+    This is a prototype of our project's API.
+    This API is made for a web app called IntuiBoard linked to the application IntuiNote developed by IRISA.
+    The project is described here: "put the link of our HTML page"
+  title: IntuiBoard Server API
+  version: 0.0.1
+servers:
+  - url: http://localhost:4200/
+security:
+  - CookieAuth: []
+tags:
+  - name: authentication
+    description: User authentication.
+paths:
+  /user/signin:
+    post:
+      summary: Sign in to the service
+      description: Sign in using provided credentials and create a user session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCredentialsDTO'
+      responses:
+        "200":
+          description: A user session is created and a session cookie is returned.
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        "409":
+          description: User already signed in (the session cookie is valid).
+        "401":
+          description: Invalid login or password.
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /user/signout:
+    post:
+      summary: Sign out from the service
+      description: Sign out and close the user session.
+      responses:
+        "200":
+          description: The user session is closed.
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /user/courses:
+    get:
+      summary: Get user lessons
+      description: Retrieve courses list of the signed-in user.
+      responses:
+        "200":
+          description: Courses were correctly found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoursesDTO'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /datas/{id_session}:
+    get:
+      summary: Get lesson datas with id_session
+      description: Get class datas of ID class (in path).
+      parameters:
+        - name: id_session
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Datas were correctly found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasDTO'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+          description: Error.
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /data/promotion/{id_course}:
+    get:
+      summary: Get class data with ID id_course of specified promotion (in path).
+      description: Get class data with ID id_course of specified promotion (in path).
+      parameters:
+        - name: id_course
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: year_promotion
+          in: query
+          description: Year of selected promotion.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Profile information are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataDTO'
+        "400":
+          description: Error.
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+components:
+  schemas:
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: username
+    CourseDTO:
+      type: object
+      description: User profile information
+      properties:
+        name:
+          type: string
+        nbStudent:
+          type: integer
+    CoursesDTO:
+      type: object
+      description: User profile information
+      properties:
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseDTO'
+    DataDTO:
+      type: object
+      description: User profile information
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+          # Propriétés spécifiques à DataDTO
+    Data_QuestionDTO:
+      type: object
+      description: Data concerning a question
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+          # Propriétés spécifiques à DataQCMDTO
+    DataNoteDTO:
+      type: object
+      description: User profile information
+      properties:
+        data:
+          type: array
+          items:
+            type: number
+          # Propriétés spécifiques à DataNoteDTO
+    DataFatigueDTO:
+      type: object
+      description: User profile information
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+          # Propriétés spécifiques à DataFatigueDTO
+    DataSuiviDTO:
+      type: object
+      description: User profile information
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+          # Propriétés spécifiques à DataSuiviDTO
+    DatasDTO:
+      description: User profile information
+      properties:
+        data:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/DataDTO'
+              - $ref: '#/components/schemas/Data_QuestionDTO'
+              - $ref: '#/components/schemas/DataNoteDTO'
+              - $ref: '#/components/schemas/DataFatigueDTO'
+              - $ref: '#/components/schemas/DataSuiviDTO'
+      type: object
+    ErrorDTO:
+      type: object
+      properties:
+        timestamp:
+          type: string
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+    UserCredentialsDTO:
+      description: User credentials information
+      type: object
+      properties:
+        login:
+          type: string
+          example: username
+        password:
+          type: string
+          format: password
+          example: pass
+  securitySchemes:
+    CookieAuth:
+      description: Use a session cookie to authenticate (see /login).
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+x-samples-languages:
+  - curl
+  - javascript
+  - node
+  - java
+  - python
+  - php

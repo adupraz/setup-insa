@@ -1,6 +1,5 @@
-import { couldStartTrivia } from "typescript"
 import * as http from 'http';
-import * as fs from 'fs';
+import { getSharedValue, pushIntoSharedValue } from '../sharedvalue';
 
 export default defineNitroPlugin((nitroApp) => {
     let serverRunning = false
@@ -9,7 +8,7 @@ export default defineNitroPlugin((nitroApp) => {
             serverRunning = true
             const server = http.createServer();
             // Liste des mots clés à filtrer
-            const keywordsToFilter: string[] = ['submit', 'corrected', 'completed'];
+            const keywordsToFilter: string[] = ['submit', 'corrected', 'completed', 'select','start', 'access'];
 
             server.on('request', (request: http.IncomingMessage, response: http.ServerResponse) => {
                 let body: Buffer[] = [];
@@ -19,28 +18,12 @@ export default defineNitroPlugin((nitroApp) => {
                 }).on('end', () => {
                     const requestBody: any = Buffer.concat(body).toString();
 
-                    // console.log(`==== ${request.method} ${request.url}`);
-                    // console.log('> Headers');
-                    // console.log(request.headers);
-
-                    // console.log('> Body');
-                    // console.log(requestBody);
-
-                    // Filtrage basé sur le contenu de "verb"
+                    //Filtrage basé sur le contenu de "verb"
                     try {
-                        const parsedBody = JSON.parse(requestBody);
-                        if (parsedBody.verb) {
-                            const verb: string = parsedBody.verb.toLowerCase();
-                            if (keywordsToFilter.some(keyword => verb.includes(keyword.toLowerCase()))) {
-                                // Écriture dans un fichier texte
-                                fs.promises.appendFile('..\\filtered_requests.log', `==== ${request.method} ${request.url}\n`)
-                                    .then(() => fs.promises.appendFile('.\\filtered_requests.log', '> Headers\n'))
-                                    .then(() => fs.promises.appendFile('.\\filtered_requests.log', JSON.stringify(request.headers) + '\n'))
-                                    .then(() => fs.promises.appendFile('.\\filtered_requests.log', '> Body\n'))
-                                    .then(() => fs.promises.appendFile('.\\filtered_requests.log', requestBody + '\n\n'))
-                                    .catch(err => console.error(err));
-                            }
-                        }
+                        const parsedBody = JSON.parse(requestBody) //parsing de la requête
+                        const verb: string = parsedBody.verb.toLowerCase() //récupération du 'verb'
+                        if (keywordsToFilter.some(keyword => verb.includes(keyword.toLowerCase()))) addToTreat(parsedBody) //tri en fonction du 'verb'
+                        console.log(parsedBody)
                     } catch (error) {
                         console.error('Error parsing JSON:', error);
                     }
@@ -55,3 +38,7 @@ export default defineNitroPlugin((nitroApp) => {
         getDataFromIN();
     }, 1000);
 })
+
+async function addToTreat(parsedBody:any) {
+    if(parsedBody) await pushIntoSharedValue(parsedBody)
+}

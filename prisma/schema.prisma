@@ -9,45 +9,56 @@ datasource db {
 
 model User {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_user String @unique
-  nom String 
-  sessions Session[]
+  id_user String @unique  //user id
+  nom String //name to display
+  sessionsId String[] //sessions opened by the user
+}
+
+model Course {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id_course String @unique  //course id
+  userId String  //user who created the course
+  id_sessions String[]  //session created under this course
+  date String  //date of creation of the course
+  name String //name of to display
 }
 
 model Session {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_session String @unique
-  date String 
-  nb_students Int
-  name String
-  user User @relation(fields :  [userId], references: [id_user])
-  userId String 
-  current_slide Int
+  id_session String @unique //session id
+  id_course String  //id of the course of this session
+  name String //name to display ##format: (X) [course_name]
+  date String //date of the begin of the session
+  nb_students Int //total nbr of student of this session
+  userId String //id of the teacher who created this session
+  current_slide Int //current slide display by the teacher of this session
 }
 
 model Data_Question {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_session     String
-  id_question String @unique
-  num_slide     Int
-  question_url String //picture url
-  list   Int[]   //stock le nombre de repetition de chaque answers
-  list_tdr Float[]
-  answers_id Int[]
-  right_answers Int[]
-  type String
+  id_question String @unique //question id
+  id_session     String //id of the active session when the question was created
+  id_slide     String //id of the slide where the question was created
+  num_slide Int //index of the slide where the question was created
+  question_url String //picture_irl (not working for now)
+  list   Int[]   //number of answers / possible answer
+  list_tdr Float[] //answer time (time beetween begin of the question and answer)
+  answers_id Int[] //id of the every answer
+  right_answers Int[] //id of answer marked 'correct' by the teacher
+  type String //type of question 'QCM' or 'QCU'
+  date String ///date of the creation of the question
 }
 
-model Data_Notes {
+model Data_Notes { //not implemented yet
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_session      String
-  id_notes  String  @unique
+  id_session      String 
+  id_notes  String  @unique 
   num_slide     Int
   list   String[]
   somme Float
 }
 
-model Data_Fatigue {
+model Data_Fatigue { //not implemented yet
   id String @id @default(auto()) @map("_id") @db.ObjectId
   id_session      String
   id_fatigue  String  @unique
@@ -56,27 +67,21 @@ model Data_Fatigue {
   average Int 
 }
 
-model Data_Suivi_RT {
+model Data_Suivi_RT { //reel time
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_session      String
-  id_slides String []
-  num_slide     Int
-  id_slide String
-  list   Int[]
-  index Int[]
+  id_session      String //session id
+  id_slides String [] //ids of slides 
+  num_slide     Int //current index slide displayed by the teacher
+  id_slide String //current id slide displayed by the teacher
+  list   Int[] //number of people staring at corresponding index slide
+  index Int[] //index of slides
 }
 
 model Data_Suivi_PS {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_session      String
-  num_slide     Int
-  index Int[]
-  list   Int[]
-  date String
-}
-
-model Time {
-  id_session      String   @id @default(auto()) @map("_id") @db.ObjectId
-  action_verb String @unique
-  action_done String 
+  id_session      String //session id
+  num_slide     Int //current index slide displayed by the teacher
+  index Int[] //index of slides
+  list   Int[] //number of people staring at corresponding index slide
+  date String //date of creation of the data
 }

@@ -34,7 +34,7 @@ async function update(prisma:PrismaClient){
     }
 }
 
-function getCurrentDateTime(): string {
+export function getCurrentDateTime(): string {
     const now: Date = new Date();
     const date: string = now.toLocaleDateString();
     const time: string = now.toLocaleTimeString();

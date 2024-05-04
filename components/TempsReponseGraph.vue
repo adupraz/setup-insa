@@ -1,77 +1,75 @@
 <script lang="ts" setup>
 import Chart from 'primevue/chart';
+import {watch} from "vue";
+
+const props = defineProps<{
+  id?: string,
+  answers?: number[],
+  nbanswers?: number[],
+  times?: number[],
+}>()
 
 const chart = ref<Chart>();
 
-// Hardcoded data (array of objects) : x is slide n° and y is time spent on the slide
-const data = {
+function changeGraph() {
+  data.value.labels = props.answers!;
+  data.value.datasets[0].data = props.times!;
+}
+
+// Hardcoded data (array of objects) : x is the answers and y is time spent to answer (on average)
+const data = ref({
   // X horizontal axis
-  labels: ['1 min', '2 min', '3 min'],
+  labels: [] as number[],
   // Y vertical axis
-  datasets: [
-    {
-      label: 'Réponse 1',
-      data: [0, 16, 6],
-    },
-    {
-      label: 'Réponse 2',
-      data: [3, 28, 4],
-    },
-    {
-      label: 'Réponse 3',
-      data: [15, 7, 1],
-    },
-  ],
-};
+  datasets: [{
+    data: [] as number[],
+  }],
+});
 
 // Graph config
 const options = ref({
   // Visual options for responsiveness (adaptation to different screen sizes)
   responsive: true,
   maintainAspectRatio: false,
-  // Legend (of dataset) and title (of graph)
+  // Legend (of dataset -> not display) and title (of graph)
   plugins: {
     legend: {
-      position: 'top',
+      // display:false,
     },
     title: {
       display: true,
-      text: 'Temps passé par réponse',
+      text: 'Temps de réponse',
     },
   },
   // Names of axis
   scales: {
     x: {
       title: {
-        text: 'Temps en minutes',
+        text: 'Temps de réponse',
         display: true,
       },
-      stacked:true,
+      stacked: true,
     },
     y: {
       title: {
         text: 'Nombre de réponses',
         display: true,
       },
-      stacked:true,
+      stacked: true,
     },
   },
 });
 
-function addData() {
-  data.labels.push(data.labels.at(-1)! + 1);
-  data.datasets[0].data.push(Number.parseInt(`${Math.random() * 140}`, 10));
-  chart.value!.refresh();
-}
+watch(props, changeGraph);
 </script>
 
 <template>
   <!-- GRAPH -->
   <Chart
-    ref="chart"
-    :data="data"
-    :options="options"
-    class="h-30rem"
-    type="bar"
+      ref="chart"
+      :data="data"
+      :options="options"
+      class="h-30rem"
+      type="bar"
   />
 </template>

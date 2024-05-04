@@ -5,7 +5,7 @@ export default defineNitroPlugin((nitroApp) => {
     const prisma = new PrismaClient();
 
     setInterval(() => {
-        if(id_session != "undefined") update(prisma);
+        if(id_session != "undefined") update(prisma); //ligne 236 => def of id_session when a session is created 
     }, 10000);
 })
 
@@ -19,7 +19,7 @@ async function update(prisma:PrismaClient){
         let dataRT = await prisma.data_Suivi_RT.findFirst({
             where:{
                 id_session:id_session, 
-                num_slide: session?.current_slide
+                num_slide: session.current_slide
             }
         })
         if(dataRT) prisma.data_Suivi_PS.create({

@@ -8,6 +8,7 @@ export async function getSharedValue(): Promise<any[]> {
     const release = await mutex.acquire();
     const sended = sharedValue
     try {
+        //if(sharedValue[0]!=null) console.log(sharedValue)
         sharedValue = []
         return sended;
     } finally {

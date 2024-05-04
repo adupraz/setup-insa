@@ -9,7 +9,8 @@ datasource db {
 
 model User {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  id_user String @unique  //user id
+  id_user String @unique //user id
+  password String //password hash
   nom String //name to display
   sessionsId String[] //sessions opened by the user
 }
@@ -43,8 +44,10 @@ model Data_Question {
   question_url String //picture_irl (not working for now)
   list   Int[]   //number of answers / possible answer
   list_tdr Float[] //answer time (time beetween begin of the question and answer)
-  answers_id Int[] //id of the every answer
-  right_answers Int[] //id of answer marked 'correct' by the teacher
+  list_responses String[] //answers (id responde)
+  nb_response Int //number of student who answered
+  answers_id String[] //id of the every answer
+  right_answers Int[] //which is answer marked 'correct' by the teacher
   type String //type of question 'QCM' or 'QCU'
   date String ///date of the creation of the question
 }

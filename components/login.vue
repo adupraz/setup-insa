@@ -1,19 +1,34 @@
 <script setup lang="ts">
 import {ref} from 'vue';
+// Definition of the message login will send to its parent
+const emit = defineEmits(['response']);
 
-const emit = defineEmits(['response'])
-
+// Store the input username
 const username = ref("");
+// Store the input password
 const pwd = ref("");
-const error = ref("")
+// Store error message
+const msg_error = ref("");
+// Store the id of the user who's connected
+const id_user = ref("");
 
-function login() {
-  console.log(username.value);
-  console.log(pwd.value);
-  if (username.value === "") {
-    emit('response', true);
-  } else {
-    error.value = "Identifiant ou mot de passe incorrect"
+async function login() {
+  // Request to login and store the answer in userData
+  const {data, pending, error, refresh} = await useFetch(`/user/signin`, {
+    method: "POST",
+    body: {username: username.value, password: pwd.value}
+  });
+  const userData = data.value;
+  // if the answer is not null, contains no "body" and no "error", update of id_user
+  if (userData != null) {
+    if (!('body' in userData!)) {
+      if (!('error' in userData!)) {
+        id_user.value = userData!.id_user;
+        emit('response', true, id_user.value);
+      }
+    }
+  } else { // Update of msg_error to display it to the user
+    msg_error.value = "Identifiant ou mot de passe incorrect"
   }
 }
 </script>
@@ -21,21 +36,23 @@ function login() {
 <template>
   <h1 class="titre"> INTUIBOARD </h1>
   <div class="form">
+    <!-- Input for the username -->
     <p>Identifiant</p>
-    <input v-model="username" placeholder="Identifiant"/>
+    <input v-model="username"/>
+    <!-- Input for the password -->
     <p>Mot de passe</p>
-    <input v-model="pwd" type="password" placeholder="Mot de passe"/>
-    <button @click="login">Connexion</button>
-    <p>{{ error }}</p>
+    <input v-model="pwd" type="password"/>
+    <!-- Button to call the login function -->
+    <div class="login">
+      <button @click="login" class="buttonLogin">Connexion</button>
+    </div>
+    <!-- Display the error if there is one -->
+    <p>{{ msg_error }}</p>
   </div>
 </template>
 
 <style scoped>
-h1 {
-  text-align: center;
-}
-
-.titre{
+.titre {
   padding-top: 5%;
 }
 
@@ -57,14 +74,31 @@ h1 {
   }
 }
 
-button {
+p {
+  padding: 0;
   margin-top: 5%;
-  background-color:#abc4e7;
-  border-radius:5%;
-  padding:5%;
+  margin-bottom: 1%;
+}
+
+.login {
+  display: flex;
+  justify-content: center;
+  margin-top: 5%;
+}
+
+.buttonLogin {
+  padding: 5%;
 }
 
 input {
+  border: none;
+  border-bottom: 2px solid #abc4e7;
+  background-color: #4a7fc8;
+  padding: 3%;
   width: 100%;
+}
+
+input:focus {
+  border: none;
 }
 </style>

@@ -29,7 +29,8 @@ export default function fileFetch() {
                 }
                
                 for (const block of (await getSharedValue())) {
-
+                    //console.log("printblock")
+                    //yconsole.log(block)
                     // Insert into the database
                     try{
                         if(block){
@@ -97,11 +98,11 @@ export default function fileFetch() {
     }, 1000);
 }
 //get question ids to be able to get the right answer when professor correct it
-function extractIDs(quizAnswers:any) {
-    const listeIDs = [];
+function extractIDs(quizAnswers:any):string[] {
+    const listeIDs:string[] = [];
     for (const answers of quizAnswers.result.quiz) {
         if (answers && answers.name) {
-            listeIDs.push(Number(answers.name));
+            listeIDs.push(answers.name);
         }
     }
     //console.log(listeIDs)
@@ -118,11 +119,11 @@ function newAnswer(founded:any, student_answer:any){
             updated_tab[answer.index-1]= answer.count //here we add the 'now score' of the answers to the question
         }
     }
-    console.log('tdr list inititalized')
+    //console.log('tdr list inititalized')
     return updated_tab;
 }
-function updateTDR(questionFounded:number[], date1:string, date2:string):number[]{
-    questionFounded.push(getSecondsDifference(new Date(date1), new Date(date2)))
+function updateTDR(questionFounded:number[], date1:string, date2:string, nb_ajout:number):number[]{
+    for (let i = 0; i < nb_ajout; i++) questionFounded.push(getSecondsDifference(new Date(date1), new Date(date2)))
     return questionFounded
 }
 function formatDateTime(date: Date): string {
@@ -158,7 +159,7 @@ function getRightAnswers(correction:any, size:number,ids:any){
     for (let i = 0; i < size; i++) {
         //console.log(ids[i])
         for(const answer of correctAnswers){
-            if(ids[i] === Number(answer)){tab_right_answers[i] = 1; break}
+            if(ids[i] === answer){tab_right_answers[i] = 1; break}
             else{tab_right_answers[i] = 0}
         }
     }
@@ -172,7 +173,7 @@ function getRightAnswers(correction:any, size:number,ids:any){
 //session => store new course if they were just created
 async function insertSession(str:any, verb:String, prisma:PrismaClient){
     if(str.context.actorStatus == "teacher" && str.object.type == "Course" && verb=="select"){
-        console.log("Step 1 create course")
+        //console.log("Step 1 create course")
         let usr = await prisma.user.findUnique({
             where : {
                 id_user : str.actor
@@ -196,7 +197,7 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
                         name: str.object.title
                     }
                 })
-                console.log("course created, id : " + course.id_course)
+                //console.log("course created, id : " + course.id_course)
             }
         }
     }
@@ -214,6 +215,14 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
                 }
             })
             if(course){
+                await prisma.course.update({
+                    where:{
+                        id: course.id
+                    },
+                    data:{
+                        id_sessions: course.id_sessions.concat([str.object.id])
+                    }
+                })
                 let session = await prisma.session.findUnique({
                     where:{
                         id_session: str.object.id,
@@ -221,7 +230,7 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
                     }
                 })
                 if(!session){
-                    console.log("Step 2 create session")
+                    //console.log("Step 2 create session")
                     session = await prisma.session.create({
                         data:{
                             id_session: str.object.id,
@@ -233,24 +242,19 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
                             current_slide: 1
                         }
                     })
+                    await prisma.user.update({
+                        where:{
+                            id : usr.id
+                        },
+                        data:{
+                            sessionsId : appendNewCourse(usr.sessionsId, session.id_session)
+                        }
+                    })
+                    id_session = session.id_session
                     console.log("session created, id : " + session.id_session)
+                    console.log("new Session")
+                    console.log(session.id_session)
                 }
-                await prisma.course.update({
-                    where:{
-                        id: course.id
-                    },
-                    data:{
-                        id_sessions: appendNewCourse(course.id_sessions, session.id_session)
-                    }
-                })
-                await prisma.user.update({
-                    where:{
-                        id : usr.id
-                    },
-                    data:{
-                        sessionsId : appendNewCourse(usr.sessionsId, session.id_session)
-                    }
-                })
             }
             
         }
@@ -284,8 +288,10 @@ async function insertQCM_QCU(str:any,verb:string, prisma:PrismaClient){
                     list:  [],
                     question_url:str.object.title,
                     list_tdr: [],
+                    list_responses : [],
                     right_answers: [],
                     answers_id:[],
+                    nb_response : 0,
                     type: str.object.quizType,
                     date: getCurrentDateTime()
                 },
@@ -309,20 +315,24 @@ async function insertQCM_QCU(str:any,verb:string, prisma:PrismaClient){
         }
 
         //2
-        if (verb == "completed") {
+        if (verb == "completed" && str.result.quiz && str.context.actorStatus == "group") {
             // If question founded
             if(questionFounded) {
+                console.log(questionFounded.list.length)
                 //initialize for the 1st time
                 if(questionFounded.list.length==0){
-                    await prisma.data_Question.update({
+                    questionFounded = await prisma.data_Question.update({
                         where: {
                             id: questionFounded.id
                         },
                         data: {
-                            answers_id: extractIDs(str)
+                            answers_id: extractIDs(str),
+                            list: new Array(str.result.quiz.length).fill(0)
                         }
                     });
                 }
+                console.log("questionFounded" + questionFounded.list)
+                let list_tdr_rep = update_list_responses(questionFounded.list, str)
                 //get the student answer
                 await prisma.data_Question.update({
                     where: {
@@ -330,7 +340,9 @@ async function insertQCM_QCU(str:any,verb:string, prisma:PrismaClient){
                     },
                     data:{
                         list: newAnswer(questionFounded, str),
-                        list_tdr: updateTDR(questionFounded.list_tdr, questionFounded.date, str.timestamp)
+                        list_tdr: updateTDR(questionFounded.list_tdr, questionFounded.date, str.timestamp, list_tdr_rep.length),
+                        list_responses: questionFounded.list_responses.concat(list_tdr_rep),
+                        nb_response : questionFounded.nb_response + 1
                     }
                 })
             }
@@ -349,6 +361,19 @@ async function insertQCM_QCU(str:any,verb:string, prisma:PrismaClient){
             })
         }
     }
+}
+function update_list_responses(founded:number[], student_answer:any):string[]{
+    let updated_tab = founded
+    let list:string[] = []
+    //console.log(founded)
+    for (const answer of student_answer.result.quiz) {
+        if (answer && answer.name) {
+            if(updated_tab[answer.index-1]!= answer.count){
+                list.push(answer.name)
+            }
+        }
+    }
+    return list
 }
 //Sync beetween teacher/student => 2 cases, if teacher switch slide (1) or if student switch slide (2)
 async function insertSync(str:any, prisma:PrismaClient){

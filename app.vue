@@ -20,7 +20,7 @@ const questions = ref(data_question)
   <!-- CONTAINER -->
   <div class="w-full h-full">
     <!-- PAGE content (variable depending on route) -->
-    <NuxtPage to="/login"/>
+    <NuxtPage/>
   </div>
 </template>
 

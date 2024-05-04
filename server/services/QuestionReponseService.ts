@@ -22,7 +22,30 @@ class QuestionReponseService {
             const res : Data_question[] = [];
 
             for (const question of questions){
-              res.push(new Data_question(question.id, question.num_slide, question.id_session, question.list, question.answers_id, question.id_question, question.question_url, question.list_tdr, question.right_answers, question.type));
+              const res_repartition : number[][] = [];
+
+              //initialization of res_repartition according to the number of responses
+              for (const answer of question.answers_id){
+                res_repartition.push([0,0,0]);
+              }
+
+              //Creation of list_repartition according to list_responses and list_tdr
+              for (let i = 0; i < question.list_tdr.length; i++) {
+                const response = question.list_responses[i];
+                const index = question.answers_id.indexOf(response)
+                const tdr = question.list_tdr[i];
+                
+                if (tdr < 30){
+                  res_repartition[index][0]++;
+                }
+                else if (tdr >= 30 && tdr < 120) {
+                  res_repartition[index][1]++;
+                }
+                else{
+                  res_repartition[index][2]++;
+                }
+              }
+              res.push(new Data_question(question.id, question.num_slide, question.id_session, question.list, question.answers_id, question.id_question, question.question_url, question.list_tdr, question.right_answers, question.type, res_repartition));
             }
             return res;
             
@@ -46,7 +69,30 @@ class QuestionReponseService {
       const res : Data_question[] = [];
 
       for (const question of questions) {
-        res.push(new Data_question(question.id, question.num_slide, question.id_session, question.list, question.answers_id, question.id_question, question.question_url, question.list_tdr, question.right_answers, question.type));
+        const res_repartition : number[][] = [];
+
+          //initialization of res_repartition according to the number of responses
+          for (const answer of question.answers_id){
+            res_repartition.push([0,0,0]);
+          }
+
+          //Creation of list_repartition according to list_responses and list_tdr
+          for (let i = 0; i < question.list_tdr.length; i++) {
+            const response = question.list_responses[i];
+            const index = question.answers_id.indexOf(response)
+            const tdr = question.list_tdr[i];
+            
+            if (tdr < 30){
+              res_repartition[index][0]++;
+            }
+            else if (tdr >= 30 && tdr < 120) {
+              res_repartition[index][1]++;
+            }
+            else{
+              res_repartition[index][2]++;
+            }
+          }
+        res.push(new Data_question(question.id, question.num_slide, question.id_session, question.list, question.answers_id, question.id_question, question.question_url, question.list_tdr, question.right_answers, question.type, res_repartition));
       }
       return res;
       

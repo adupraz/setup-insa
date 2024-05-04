@@ -1,4 +1,4 @@
-import SessionService  from '../../services/SessionService';
+import SessionService  from '../../../services/SessionService';
 
 
 const sessionService = new SessionService();
@@ -15,18 +15,19 @@ export default defineEventHandler(async (event) => {
 
   try {
     // to get a data_question with our service
-    const sessionInfo = await sessionService.getSessionInfo(id_session_string);
-    console.log("Information of this Session : ", sessionInfo)
-    if (sessionInfo != null || sessionInfo !== undefined) {
-      setResponseStatus(event, 200);
-      return sessionInfo;
-    } else { 
-      setResponseStatus(event, 404); 
-      return {error: 'This session not found or already deleted'}
+    const datas = await sessionService.getAllDatas(id_session_string);
+    console.log("All datas of this Session : ", datas)
+    if (datas != null || datas !== undefined) {
+        setResponseStatus(event, 200);
+        return datas; 
+    } else {  
+        setResponseStatus(event, 404);
+      return { error: 'No data available' }
+      
     }
   } catch (error) {
-    setResponseStatus(event, 500);
     console.error('Error fetching this session:', error);
-    return { error: 'Failed to fetch this session' };
+    setResponseStatus(event, 500);
+    return  { error: 'Failed to fetch this session' }
   }
 });

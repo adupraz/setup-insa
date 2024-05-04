@@ -1,5 +1,5 @@
 import * as http from 'http';
-import { getSharedValue, pushIntoSharedValue } from '../sharedvalue';
+import { pushIntoSharedValue } from '../sharedvalue';
 
 export default defineNitroPlugin((nitroApp) => {
     let serverRunning = false
@@ -17,15 +17,14 @@ export default defineNitroPlugin((nitroApp) => {
                     body.push(chunk);
                 }).on('end', () => {
                     const requestBody: any = Buffer.concat(body).toString();
-
                     //Filtrage basé sur le contenu de "verb"
                     try {
                         const parsedBody = JSON.parse(requestBody) //parsing de la requête
                         const verb: string = parsedBody.verb.toLowerCase() //récupération du 'verb'
                         if (keywordsToFilter.some(keyword => verb.includes(keyword.toLowerCase()))) addToTreat(parsedBody) //tri en fonction du 'verb'
-                        console.log(parsedBody)
+                        //console.log(parsedBody)
                     } catch (error) {
-                        console.error('Error parsing JSON:', error);
+                        //console.error('Error parsing JSON:', error);
                     }
                     response.end();
                 });

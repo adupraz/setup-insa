@@ -1,11 +1,11 @@
-import QuestionReponseService  from '../../services/QuestionReponseService';
+import QuestionReponseService  from '../../../../services/QuestionReponseService';
 
 
 const questionReponseService = new QuestionReponseService();
 export default defineEventHandler(async (event) => {
   // to obtain year_promotion and id_course from query
-  const { id_session } = getQuery(event);
-  let id_session_string: string | null = "";
+  let id_session = event.context.params?.id_session; 
+  let id_session_string: string = "";
 
   if (id_session !== null && id_session !== undefined) {
     id_session_string = id_session.toString();
@@ -16,21 +16,15 @@ export default defineEventHandler(async (event) => {
     const dataQuestion = await questionReponseService.getDataQuestionById(id_session_string) ;
     console.log("Data question", dataQuestion)
     if (dataQuestion != null || dataQuestion !== undefined) {
-      return {
-        statusCode: 200,
-        body: dataQuestion
-      };
+        setResponseStatus(event, 200);
+        return dataQuestion
     } else {  
-      return {
-        statusCode: 404,
-        body: { error: 'Question not found' }
-      };
+        setResponseStatus(event, 404);
+        return { error: 'Question not found' }
     }
   } catch (error) {
     console.error('Error fetching question data:', error);
-    return {
-      statusCode: 500,
-      body: { error: 'Failed to fetch question data' }
-    };
+    setResponseStatus(event, 500);
+    return { error: 'Failed to fetch question data' }
   }
 });

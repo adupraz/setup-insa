@@ -1,42 +1,47 @@
 <script setup lang="ts">
-import {ref} from 'vue';
+import QuizStruc from "~/components/QuizStruc.vue";
 
-const cours = ref("DTR")
+const emit = defineEmits(['retour'])
 
+defineProps<{
+  id_session?: string,
+  date?: string,
+  nb_student?: number,
+  name?: string,
+}>()
+
+function goBack(){
+  emit('retour', "choisi");
+}
 </script>
 
 <template>
-  <h1>{{ cours }}</h1>
+  <p class="retour" @click="goBack"><-Retour</p>
+  <div>
+    <h1>{{ name }} - {{ date }}</h1>
+    <p>Nombre d'élèves : {{ nb_student }}</p>
+  </div>
   <div class="flexrow">
-    <div class="flexcolumn">
-      <div class="synchro a">
-        <p>Nombre d'élèves</p>
-      </div>
-      <div class="prisenote a">
-        <p>Synchro</p>
-      </div>
+    <div>
+      <SyncroGraph/>
     </div>
-    <div class="questions a">
-      <QuizAnswerGraph/>
+    <div>
+      <QuizStruc :id_session="id_session" :dashboard="'dtr'"/>
     </div>
   </div>
 </template>
 
 <style scoped>
+p{
+  text-align:center;
+}
+.retour{
+  text-align: left;
+  text-decoration: underline;
+}
 .flexrow {
   display: flex;
-  flex-grow: 1;
   flex-wrap: wrap;
-}
-
-.flexcolumn {
-  display: flex;
-  flex-grow: 1;
-  flex-direction: column;
-  flex-wrap: nowrap;
-}
-
-.a {
-  flex-basis: 50%;
+  justify-content: space-around;
 }
 </style>

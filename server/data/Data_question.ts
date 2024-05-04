@@ -16,6 +16,9 @@ enum type_question {
   VRAIFAUX = 'VRAIFAUX'
 }*/
 
+//Définission du type Triplet
+type Triplet<T, U, V> = [T, U, V];
+
 // Definition of Data_question class who's inheriting Data interface
 class Data_question implements Data {
   id : string;
@@ -24,7 +27,7 @@ class Data_question implements Data {
 
   
   list: any[]; // list of number of answers chosen for each possible answer
-  answers_id: number[]; // indice of each possible answer 
+  answers_id: string[]; // indice of each possible answer 
 
   id_question: string;
   question_url: string;
@@ -33,7 +36,9 @@ class Data_question implements Data {
   right_answers: Array<number>;
   type: string;
 
-  constructor(id: string, num_slide: number, id_cours: string, list: any[], answers_id: number[], id_question: string, question_url: string, list_tdr: Array<number>, right_answers: Array<number>, type: string) {
+  list_repartition:number[][];
+
+  constructor(id: string, num_slide: number, id_cours: string, list: any[], answers_id: string[], id_question: string, question_url: string, list_tdr: Array<number>, right_answers: Array<number>, type: string, list_repartition:number[][]) {
     //super(id, num_slide, id_cours, list);
     this.id = id;
     this.num_slide = num_slide;
@@ -47,6 +52,7 @@ class Data_question implements Data {
     this.list_tdr = list_tdr;
     this.right_answers = right_answers;
     this.type = type;
+    this.list_repartition = list_repartition;
   }
 
 

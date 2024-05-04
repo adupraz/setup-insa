@@ -62,24 +62,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDTO'
-  /user/courses:
+  /user/{id_user}/sessions:
     get:
-      summary: Get user lessons
+      summary: Get user sessions
       description: Retrieve courses list of the signed-in user.
+      parameters:
+        - name: id_user
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
-          description: Courses were correctly found.
+          description: Datas successfully deleted.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CoursesDTO'
+                $ref: '#/components/schemas/SessionsDTO'
         default:
-          description: Error
+          description: Error while retrieving the sessions infos
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDTO'
-  /datas/{id_session}:
+    delete:
+      summary: Delete user sessions
+      description: Delete sessions list of the signed-in user.
+      parameters:
+        - name: id_user
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Courses were correctly deleted.
+        default:
+          description: Error during the sessions deletion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /session/{id_session}:
     get:
       summary: Get lesson datas with id_session
       description: Get class datas of ID class (in path).
@@ -95,19 +119,63 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DatasDTO'
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDTO'
-          description: Error.
+                $ref: '#/components/schemas/SessionDTO'
         default:
           description: Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDTO'
+    delete:
+      summary: Delete user session 
+      description: Delete a session and all its data according to an id_session.
+      parameters:
+        - name: id_session
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The session were correctly deleted.
+        default:
+          description: Error during the session's data deletion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /session/{id_session}/data/question:
+    get:
+      summary: Get lesson datas with id_session
+      description: Get class datas of ID class (in path).
+      parameters:
+        - name: id_session
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Datas were correctly found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Data_QuestionDTO'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDTO'
+  /session/{id_session}/data/question/{num_slide}:
+  /session/{id_session}/data/synchro:
+  /session/{id_session}/data/synchro/{num_slide}:
+  /session/{id_session}/data/notes:
+  /session/{id_session}/data/notes/{num_slide}:
+  /session/{id_session}/data/fatigue:
+  /session/{id_session}/data/fatigue/{num_slide}:
+
+#Pour la suivante : à voir si on l'implémente plus tard
   /data/promotion/{id_course}:
     get:
       summary: Get class data with ID id_course of specified promotion (in path).
@@ -150,7 +218,7 @@ components:
         username:
           type: string
           example: username
-    CourseDTO:
+    SessionDTO:
       type: object
       description: User profile information
       properties:
@@ -158,14 +226,14 @@ components:
           type: string
         nbStudent:
           type: integer
-    CoursesDTO:
+    SessionsDTO:
       type: object
       description: User profile information
       properties:
         courses:
           type: array
           items:
-            $ref: '#/components/schemas/CourseDTO'
+            $ref: '#/components/schemas/SessionDTO'
     DataDTO:
       type: object
       description: User profile information
@@ -184,7 +252,7 @@ components:
           items:
             type: integer
           # Propriétés spécifiques à DataQCMDTO
-    DataNoteDTO:
+    Data_NotesDTO:
       type: object
       description: User profile information
       properties:
@@ -193,7 +261,7 @@ components:
           items:
             type: number
           # Propriétés spécifiques à DataNoteDTO
-    DataFatigueDTO:
+    Data_FatigueDTO:
       type: object
       description: User profile information
       properties:
@@ -202,7 +270,7 @@ components:
           items:
             type: integer
           # Propriétés spécifiques à DataFatigueDTO
-    DataSuiviDTO:
+    Data_SuiviDTO:
       type: object
       description: User profile information
       properties:

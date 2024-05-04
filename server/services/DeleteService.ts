@@ -32,11 +32,13 @@ export default class DeleteService{
             });
 
             // Delete all session instances of Data_Question
+            /*
             const deletedData_Suivi = await prisma.data_Suivi.deleteMany({
                 where: {
                   id_session : idSession
                 }
             });
+            */
 
             //Delete the actual session
             const deletedSession = await prisma.session.delete({

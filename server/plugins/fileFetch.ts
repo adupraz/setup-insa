@@ -2,7 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import { getCurrentDateTime } from './updatePS';
 import { getSharedValue } from '../sharedvalue';
 
-import * as fs from 'fs';
 import { isNumber } from 'chart.js/helpers';
 
 export let id_session:string = "undefind"
@@ -11,7 +10,7 @@ export default function fileFetch() {
     const prisma = new PrismaClient();
     let isFetchingData = false; // Variable to keep track of the state
 
-    async function fetchDataAndInsertIntoDatabase(filePath: string): Promise<void> {
+    async function fetchDataAndInsertIntoDatabase(): Promise<void> {
         // Check if an operation is already in progress
         if (isFetchingData) {
             console.log('An operation is already in progress. Waiting for the next iteration.');
@@ -20,46 +19,21 @@ export default function fileFetch() {
         isFetchingData = true; // Set to true to indicate the start of the operation
 
         try {
-            // Read the file
-            fs.readFile(filePath, 'utf8', async (err, data) => {
-                if (err) {
-                    console.error('Error reading the file:', err);
-                    isFetchingData = false; // Set back to false in case of error
-                    return;
+            // Read the file     
+            for (const block of (await getSharedValue())) {
+                //console.log("printblock")
+                //yconsole.log(block)
+                // Insert into the database
+                try{
+                    if(block){
+                        insertIntoDatabase(block)
+                    }
                 }
-               
-                for (const block of (await getSharedValue())) {
-                    //console.log("printblock")
-                    //yconsole.log(block)
-                    // Insert into the database
-                    try{
-                        if(block){
-                            insertIntoDatabase(block)
-                        }
-                    }
-                    catch(err){
-                        isFetchingData = false;
-                    }
-                    
+                catch(err){
+                    isFetchingData = false;
                 }
-
-                // Empty the file after processing all blocks
-                fs.writeFile(filePath, '', 'utf8', (err) => {
-                    if (err) {
-                        console.error('Error writing to the file:', err);
-                    }
-                    isFetchingData = false; // Set back to false after operation completion
-                })
-                fs.readFile(filePath, 'utf8', async (err, data) => {
-                    if (err) {
-                        console.error('Error reading the file:', err);
-                        isFetchingData = false; // Set back to false in case of error
-                        return;
-                    }
-                })
-                //if(data) console.log(data)
-
-            });
+                
+            }
         } catch (error) {
             console.error('An error occurred:', error);
             isFetchingData = false; // Set back to false in case of error
@@ -92,9 +66,7 @@ export default function fileFetch() {
      // Call fetchDataAndInsertIntoDatabase at regular intervals
      setInterval(() => {
         let filePath: string
-        if(process.platform === "linux") filePath = './filtered_requests.log';
-        else filePath = '.\\filtered_requests.log';
-        fetchDataAndInsertIntoDatabase(filePath);
+        fetchDataAndInsertIntoDatabase();
     }, 1000);
 }
 //get question ids to be able to get the right answer when professor correct it

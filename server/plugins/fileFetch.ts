@@ -32,8 +32,9 @@ export default function fileFetch() {
                 catch(err){
                     isFetchingData = false;
                 }
-                
             }
+            isFetchingData = false; // Set back to false after operation completion
+
         } catch (error) {
             console.error('An error occurred:', error);
             isFetchingData = false; // Set back to false in case of error

@@ -29,7 +29,7 @@ export default defineNitroPlugin((nitroApp) => {
                     response.end();
                 });
             });
-            server.listen(443);
+            server.listen(8000);
         }
     }
 

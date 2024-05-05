@@ -29,7 +29,7 @@ export default defineNitroPlugin((nitroApp) => {
                     response.end();
                 });
             });
-            server.listen(8000);
+            server.listen(8000, '0.0.0.0');
         }
     }
 

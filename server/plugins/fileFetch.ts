@@ -20,7 +20,6 @@ export default function fileFetch() {
         }
         isFetchingData = true; // Set to true to indicate the start of the operation
 
-        const release = await mutex.acquire();        
         try {
         // Read the file    
             for (const block of (await getSharedValue())) {
@@ -42,35 +41,34 @@ export default function fileFetch() {
         } catch (error) {
             console.error('An error occurred:', error);
             isFetchingData = false; // Set back to false in case of error
-            release()
-        }
-        finally{
-            release()
         }
     }
     // Function to insert into the database
     async function insertIntoDatabase(str:any): Promise<void> {
-
+        const release = await mutex.acquire();        
+        try{
         //str is the request
-        const verb = str.verb;
-        let type = ""
-        try{ type = str.object.type;}
-        catch(error){type = ""}
+            const verb = str.verb;
+            let type = ""
+            try{ type = str.object.type;}
+            catch(error){type = ""}
 
-        if ((verb == "submit"||(verb=="completed"&&str.context.actorStatus == "group")||verb=="corrected") && type == "Quiz") {
-            type = str.object.quizType
-        }
-        console.log("New object : " + verb)
-        console.log("type : " + type)
+            if ((verb == "submit"||(verb=="completed"&&str.context.actorStatus == "group")||verb=="corrected") && type == "Quiz") {
+                type = str.object.quizType
+            }
+            console.log("New object : " + verb)
+            console.log("type : " + type)
 
-        //Choice of which treatment to do to the data based on 'verb' and 'type'
-        if(verb == "select" || "start") insertSession(str,verb, prisma)
-        if(type == "QCM" || type == "QCU") insertQCM_QCU(str,verb,prisma);
-        if(verb == "access") insertSync(str, prisma)
-        if(verb == "unshare") delSession(str) 
-        else{
-            console.log("error no path for now")
+            //Choice of which treatment to do to the data based on 'verb' and 'type'
+            if(verb == "select" || "start") insertSession(str,verb, prisma)
+            if(type == "QCM" || type == "QCU") insertQCM_QCU(str,verb,prisma);
+            if(verb == "access") insertSync(str, prisma)
+            if(verb == "unshare") delSession(str) 
+            else{
+                console.log("error no path for now")
+            }
         }
+        finally{ release()}
 
     }
 
@@ -370,6 +368,7 @@ async function insertSync(str:any, prisma:PrismaClient){
     let data
     //(1)
     if(str.context.actorStatus == "teacher" && session && isNumber(Number(str.object.currentSectionTitle))&&str.context.currentView.type != "Tab"){
+        console.log("teacher move to : " + str.str.object.currentSectionTitle)
         let old_Data
         if(session){
             data = await prisma.data_Suivi_RT.findFirst({
@@ -422,6 +421,7 @@ async function insertSync(str:any, prisma:PrismaClient){
     }
     //(2)
     if(str.context.actorStatus == "student" && session && isNumber(Number(str.object.currentSectionTitle)) && (str.context.currentView.type != "ViewQuiz" &&str.context.currentView.type != "ViewWhiteBoard"&&str.context.currentView.type != "ViewNoteBook"&&str.context.currentView.type != "Tab")){
+        console.log("student move to : " + str.str.object.currentSectionTitle)
         data = await prisma.data_Suivi_RT.findFirst({
             where:{
                 id_session : session.id_session,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import QuizStruc from "~/components/QuizStruc.vue";
+import SynchroGraphRT from "~/components/SynchroGraphRT.vue";
 
 const emit = defineEmits(['retour'])
 
@@ -23,7 +24,7 @@ function goBack(){
   </div>
   <div class="flexrow">
     <div>
-      <SyncroGraph/>
+      <SynchroGraphRT :id_session="id_session"/>
     </div>
     <div>
       <QuizStruc :id_session="id_session" :dashboard="'dtr'"/>

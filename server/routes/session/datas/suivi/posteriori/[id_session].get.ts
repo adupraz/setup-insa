@@ -1,4 +1,4 @@
-import SynchroService  from '../../../../services/SynchroService';
+import SynchroService  from '../../../../../services/SynchroService';
 
 
 const synchroService = new SynchroService();
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // to get a data_question with our service
-    const datasSynchro = await synchroService.getAllSynchro(id_session_string);
+    const datasSynchro = await synchroService.getAllSynchroPS(id_session_string);
     console.log("Information of this Synchronisation : ", datasSynchro)
     if (datasSynchro != null || datasSynchro !== undefined) {
         setResponseStatus(event, 200);

@@ -1,6 +1,7 @@
 import {PrismaClient } from '@prisma/client';
 import Data_suivi_rt from '../data/Data_suivi_rt'; 
-
+import Data_suivi_ps from '../data/Data_suivi_ps';
+import Session from '../data/Session';
 
 const prisma = new PrismaClient();
 class SynchroService {
@@ -9,28 +10,34 @@ class SynchroService {
    * Get the current slide of the connected professor from the database.
    * @returns {number} - The current slide number.
    */
-
   
   async getAllSynchro(idSession: string) {
+
+    const session_en_cours = await prisma.session.findUnique({
+      where:{
+        id_session : idSession
+      }
+    })
+
+    const current_slide = session_en_cours?.current_slide; 
     
     const datas_suivi_RT = await prisma.data_Suivi_RT.findMany({
       where: {
-        id_session : idSession
+        id_session : idSession,
+        num_slide: current_slide
       }
-    })       
-
+    }) 
+    
     console.log(datas_suivi_RT);
-    
-    const nb_question_by_slide = []; 
-    nb_question_by_slide[0]=0; 
-    const res : Data_suivi_rt[] = []; 
+  
+
+    let i = 0; 
     let synchro = {
-        retard : 0,
-        en_phase : 0,
-        avance : 0
-      
+      nb_question: 0,
+      retard: 0,
+      en_phase: 0, 
+      avance: 0
     }
-    
 
     for(const data_suivi_RT of datas_suivi_RT){
       const nb_questions = await prisma.data_Question.count({
@@ -40,100 +47,115 @@ class SynchroService {
         }
       })
 
-      res.push(new Data_suivi_rt(data_suivi_RT.id, data_suivi_RT.id_session, data_suivi_RT.id_slides, data_suivi_RT.num_slide, data_suivi_RT.id_slide, data_suivi_RT.list, data_suivi_RT.index));
-      let i = 0; 
+      synchro.nb_question = nb_questions;
+
+      i=0;
       for(const num_slide_students of data_suivi_RT.index){
         if(num_slide_students < data_suivi_RT.num_slide){
-          synchro.retard += data_suivi_RT.list[i++]
+          synchro.retard += data_suivi_RT.list[i]
         }
         else if(num_slide_students > data_suivi_RT.num_slide){
-          synchro.avance += data_suivi_RT.list[i++]
+          synchro.avance += data_suivi_RT.list[i]
         }
         else if(num_slide_students == data_suivi_RT.num_slide){
-          synchro.en_phase += data_suivi_RT.list[i++]
+          synchro.en_phase += data_suivi_RT.list[i]
         }
+        i++; 
       }
-      console.log("RES :", res)
   
-      nb_question_by_slide[data_suivi_RT.num_slide] = nb_questions; 
-
-      return {
-        datas_suivi_RT : res, 
-        synchro: synchro, 
-        nb_question_by_slide: nb_question_by_slide
-      }; 
-
-      
     }
 
+    return synchro; 
   }
 
-  // private dbService: DatabaseService;
+  async getAllSynchroPS (idSession : string){
+    const datas_suivi_PS = await prisma.data_Suivi_PS.findMany({
+      where: {
+        id_session : idSession
+      }
+    })  
 
-  // constructor() {
-  //   this.dbService = new DatabaseService(); // Initialize the database service
-  // }
+    const all_datas_suivi_ps: Data_suivi_ps[] = [];
+    const res_datas_suivi_ps: Data_suivi_ps[] = [];
 
-  // /**
-  //  * Get the current slide of the connected professor from the database.
-  //  * @returns {number} - The current slide number.
-  //  */
-  // getSlideProfesseurEnCours(): number {
-  //   // Implementation to query the database for the current slide of the connected professor
-  //   // ...
-  //   return 0; // Placeholder return value
-  // }
+    //Initialization of the number of question
+    const nb_question_by_slide = []; 
+    nb_question_by_slide[0]=0;
 
-  // /**
-  //  * Get the current slides of all students from the database.
-  //  * @returns {Array<number>} - List of current slide numbers for each student.
-  //  */
-  // getSlidesEtudiantsEnCours(): number[] {
-  //   // Implementation to query the database for the current slides of all students
-  //   // ...
-  //   return []; // Placeholder return value
-  // }
+    for(const elt_data_suivi_PS of datas_suivi_PS){
+      //Check if there is another data for the slide of the current data
+      let present: boolean = false;
+      let index_data: number = 0;
+      for (let i = 0; i<res_datas_suivi_ps.length;i++){
+        if(elt_data_suivi_PS.num_slide == res_datas_suivi_ps[i].num_slide){
+          present = true;//Detection of the data
+          index_data = i;
+        }
+      }
+    
+      if (!present){
+        //If the data of a slide doesn't exist, we put it in the result
+        res_datas_suivi_ps.push(new Data_suivi_ps(elt_data_suivi_PS.id, elt_data_suivi_PS.id_session, elt_data_suivi_PS.num_slide, elt_data_suivi_PS.list, elt_data_suivi_PS.index,1,0,0,0));
 
-  // /**
-  //  * Initialize a Data_suivi variable and increment its elements based on student presence.
-  //  * @param {Array<number>} slidesEtudiants - List of current slide numbers for each student.
-  //  * @param {number} slideProfesseur - Current slide number of the professor.
-  //  * @returns {Data_suivi} - Initialized Data_suivi object.
-  //  */
-  // initialiserDataSuivi(slidesEtudiants: number[], slideProfesseur: number): Data_suivi {
-  //   const dataSuivi = new Data_suivi(slidesEtudiants.length);
+        //And also get the number of questions for this slide
+        const nb_questions = await prisma.data_Question.count({
+          where: {
+            id_session : idSession,
+            num_slide : elt_data_suivi_PS.num_slide
+          }
+        })
+        nb_question_by_slide[elt_data_suivi_PS.num_slide] = nb_questions; 
+      }
+      else{
+        //Else we do a mean of all the datas of synchronisation
+        if (res_datas_suivi_ps[index_data].list.length != elt_data_suivi_PS.list.length){
+          console.error("Lists of the same slide should have the same number of slides in the synchronization list.")
+        }
+        else{
+          const means:number[] = [];
+          for (let i = 0; i<res_datas_suivi_ps[index_data].list.length;i++){
+            const mean = (elt_data_suivi_PS.list[i] + res_datas_suivi_ps[index_data].list[i] * res_datas_suivi_ps[index_data].nb_datas)/(1 + res_datas_suivi_ps[index_data].nb_datas);
+            means.push(mean);
+          }
+          res_datas_suivi_ps[index_data].list = means;
+          res_datas_suivi_ps[index_data].nb_datas++;
+        }
+      }
+    }
 
-  //   // Implementation to increment elements of dataSuivi based on student presence
-  //   // ...
+    //Calculus of the students in retard, on the current slide and early
+    for (const elt of res_datas_suivi_ps){
+      let retard: number = 0;
+      let current: number = 0;
+      let early: number = 0;
+      current = elt.list[elt.num_slide];
 
-  //   return dataSuivi;
-  // }
+      for (let i = 0; i < elt.num_slide; i++) {
+        retard += elt.list[i];
+      }
+      for (let i = elt.num_slide + 1; i < elt.list.length; i++) {
+        early += elt.list[i];
+      }
 
-  // /**
-  //  * Store the Data_suivi variable in the database and return it for server controllers.
-  //  * @param {Data_suivi} dataSuivi - Initialized Data_suivi object.
-  //  * @returns {Data_suivi} - Stored Data_suivi object.
-  //  */
-  // stockerEtRetournerData(dataSuivi: Data_suivi): Data_suivi {
-  //   // Implementation to store dataSuivi in the database
-  //   // ...
+      elt.retard = retard;
+      elt.current = current;
+      elt.early = early;
+    }
 
-  //   return dataSuivi;
-  // }
+    //Creation of the table of all the number of slides
+    const res_slides = [];
+    const nb_slides = res_datas_suivi_ps.length;
+    for (let i = 0; i<nb_slides;i++){
+      res_slides[i] = i+1;
+    }
 
-  // /**
-  //  * Retrieve all Data_suivi data by course ID for dashboard display.
-  //  * @param {string} idCours - Course ID.
-  //  * @returns {Map<number, Data_suivi>} - Map containing slide numbers and corresponding Data_suivi objects.
-  //  */
-  // recupererDataPourDashboard(idCours: string): Map<number, Data_suivi> {
-  //   const dataMap = new Map<number, Data_suivi>();
+    return{
+      datas_suivi_ps : res_datas_suivi_ps,//Table of one data per slide of the session
+      slides : res_slides, // Table which length is the number of slides of the session
+      nb_question_by_slide: nb_question_by_slide //Number of question by slide
+    };
+  }
 
-  //   // Implementation to query the database for all Data_suivi data by course ID
-  //   // ...
-
-  //   return dataMap;
-  // }
 }
 
 export default SynchroService;

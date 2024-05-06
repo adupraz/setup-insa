@@ -4,7 +4,7 @@ import { getSharedValue } from '../sharedvalue';
 
 import { isNumber } from 'chart.js/helpers';
 
-export let id_session:string = "undefind"
+export let id_sessions:string[] = []
 
 export default function fileFetch() {
     const prisma = new PrismaClient();
@@ -19,7 +19,7 @@ export default function fileFetch() {
         isFetchingData = true; // Set to true to indicate the start of the operation
 
         try {
-            // Read the file     
+        // Read the file            
             for (const block of (await getSharedValue())) {
                 //console.log("printblock")
                 //yconsole.log(block)
@@ -32,20 +32,23 @@ export default function fileFetch() {
                 catch(err){
                     isFetchingData = false;
                 }
+                
             }
             isFetchingData = false; // Set back to false after operation completion
+            //if(data) console.log(data)
         } catch (error) {
             console.error('An error occurred:', error);
             isFetchingData = false; // Set back to false in case of error
         }
     }
-
     // Function to insert into the database
     async function insertIntoDatabase(str:any): Promise<void> {
 
         //str is the request
         const verb = str.verb;
-        let type = str.object.type;
+        let type = ""
+        try{ type = str.object.type;}
+        catch(error){type = ""}
 
         if ((verb == "submit"||(verb=="completed"&&str.context.actorStatus == "group")||verb=="corrected") && type == "Quiz") {
             type = str.object.quizType
@@ -57,6 +60,7 @@ export default function fileFetch() {
         if(verb == "select" || "start") insertSession(str,verb, prisma)
         if(type == "QCM" || type == "QCU") insertQCM_QCU(str,verb,prisma);
         if(verb == "access") insertSync(str, prisma)
+        if(verb == "unshare") delSession(str) 
         else{
             console.log("error no path for now")
         }
@@ -155,10 +159,9 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
             let course = await prisma.course.findUnique({
                 where: {
                     id_course: str.object.id,
-                    userId : usr.id_user
                 }
             })
-
+            console.log(str.object)
             if(!course){
                 course = await prisma.course.create({
                     data:{
@@ -186,6 +189,7 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
                     userId : usr.id_user
                 }
             })
+        
             if(course){
                 await prisma.course.update({
                     where:{
@@ -222,13 +226,12 @@ async function insertSession(str:any, verb:String, prisma:PrismaClient){
                             sessionsId : appendNewCourse(usr.sessionsId, session.id_session)
                         }
                     })
-                    id_session = session.id_session
                     console.log("session created, id : " + session.id_session)
                     console.log("new Session")
                     console.log(session.id_session)
                 }
-            }
-            
+                id_sessions.push(session.id_session)
+            }   
         }
     }
 }
@@ -360,6 +363,7 @@ async function insertSync(str:any, prisma:PrismaClient){
     let data
     //(1)
     if(str.context.actorStatus == "teacher" && session && isNumber(Number(str.object.currentSectionTitle))&&str.context.currentView.type != "Tab"){
+        let old_Data
         if(session){
             data = await prisma.data_Suivi_RT.findFirst({
                 where:{
@@ -367,18 +371,38 @@ async function insertSync(str:any, prisma:PrismaClient){
                     num_slide: Number(str.object.currentSectionTitle)
                 }
             })
-        }
-        if(!data && str.object.currentSection){
-            await prisma.data_Suivi_RT.create({
-                data:{
+            old_Data = await prisma.data_Suivi_RT.findFirst({
+                where:{
                     id_session : session.id_session,
-                    id_slides : [str.object.currentSection],
-                    num_slide : Number(str.object.currentSectionTitle),
-                    id_slide : str.object.currentSection,
-                    index : [Number(str.object.currentSectionTitle)],
-                    list: [0]
+                    num_slide: session.current_slide
                 }
             })
+        }
+        if(!data && str.object.currentSection){
+           await prisma.data_Suivi_RT.create({
+                    data:{
+                        id_session : session.id_session,
+                        id_slides : [str.object.currentSection],
+                        num_slide : Number(str.object.currentSectionTitle),
+                        id_slide : str.object.currentSection,
+                        index : [Number(str.object.currentSectionTitle)],
+                        list: [0]
+                    }
+                })   
+        }
+        if(old_Data){
+            await prisma.data_Suivi_RT.updateMany({
+            where:{
+                id_session:session.id_session,
+                num_slide: Number(str.object.currentSectionTitle)
+            },
+            data:{
+                id_slides : old_Data.id_slides,
+                id_slide : str.object.currentSection,
+                index : old_Data.index,
+                list: old_Data.list
+                }
+            }) 
         }
         await prisma.session.update({
             where:{
@@ -432,4 +456,8 @@ function updateData(data: any,str:any, firstConnexion:boolean):any{
     }
     data.list[data.index.indexOf(Number(str.object.currentSectionTitle))] ++
     return data
+}
+
+function delSession(str:any){
+    if(id_sessions.includes(str.courseSessionId)) id_sessions = id_sessions.filter(item => item !== str.courseSessionId);
 }

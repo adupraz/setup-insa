@@ -2,28 +2,34 @@
 import Chart from 'primevue/chart';
 import {watch} from "vue";
 
+// Information given by the parent
 const props = defineProps<{
+  // ID question
   id?: string,
-  answers?: number[],
-  nbanswers?: number[],
-  times?: number[],
+  // Responses time
+  times?: number[][],
 }>()
 
+// Reference of the graph
 const chart = ref<Chart>();
 
 function changeGraph() {
-  data.value.labels = props.answers!;
-  data.value.datasets[0].data = props.times!;
+  // Add the first data in datasets -> erase the others data in it from the question before
+  data.value.datasets = [{label:1, data:props.times![0]}];
+  // Add the remaining data
+  for(const i=ref(1);i.value<props.times!.length;i.value++){
+    data.value.datasets.push({label:i.value+1, data:props.times![i.value]});
+  }
+  // Display the legend
+  options.value.plugins.legend.display = true;
 }
 
-// Hardcoded data (array of objects) : x is the answers and y is time spent to answer (on average)
+// Store the data of the graph
 const data = ref({
-  // X horizontal axis
-  labels: [] as number[],
-  // Y vertical axis
-  datasets: [{
-    data: [] as number[],
-  }],
+  // X horizontal axis : Responses time
+  labels: ['<30s','30s-2min','>2min'],
+  // Y vertical axis : how much, each answer, has people for each labels
+  datasets: [{}] as [{label: number, data: number[]}],
 });
 
 // Graph config
@@ -34,7 +40,7 @@ const options = ref({
   // Legend (of dataset -> not display) and title (of graph)
   plugins: {
     legend: {
-      // display:false,
+      display:false,
     },
     title: {
       display: true,
@@ -60,6 +66,7 @@ const options = ref({
   },
 });
 
+// If props change, the function 'changeGraph' is called
 watch(props, changeGraph);
 </script>
 

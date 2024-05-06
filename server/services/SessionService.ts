@@ -17,6 +17,7 @@ class SessionService{
             });
             if (!session) return null;
 
+            console.log(session.nb_students);
             return new Session(session.id_session,session.date,session.nb_students,session.name)
 
         }catch (error: any) {

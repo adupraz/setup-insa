@@ -8,7 +8,7 @@ export default defineNitroPlugin((nitroApp) => {
             serverRunning = true
             const server = http.createServer();
             // Liste des mots clés à filtrer
-            const keywordsToFilter: string[] = ['submit', 'corrected', 'completed', 'select','start', 'access'];
+            const keywordsToFilter: string[] = ['submit', 'corrected', 'completed', 'select','start', 'access', 'unshare'];
 
             server.on('request', (request: http.IncomingMessage, response: http.ServerResponse) => {
                 let body: Buffer[] = [];
@@ -29,13 +29,13 @@ export default defineNitroPlugin((nitroApp) => {
                     response.end();
                 });
             });
-            server.listen(443, '0.0.0.0');
+            server.listen(443);
         }
     }
 
     setInterval(() => {
         getDataFromIN();
-    }, 1000);
+    }, 10000);
 })
 
 async function addToTreat(parsedBody:any) {

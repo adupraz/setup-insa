@@ -1,38 +1,54 @@
 <script lang="ts" setup>
-import { watch } from 'vue';
-
+import {watch} from 'vue';
+// Information given by the parent
 const props = defineProps<{
+  // ID question
   id?: string,
-  answers?: number[],
+  // Number associated with each question
+  answers?: string[],
+  // Number of answers per question
   nbanswers?: number[],
+  // Number associated with the correct answer : 1 is for a correct answer, 0 otherwise
   correct?: number[],
 }>()
 
-function changeGraph(){
-  graphData.value.labels = props.answers!;
-  graphData.value.datasets[0].data = props.nbanswers!;
+function changeGraph() {
+  // initialization of the legend with numbers (can't recover the answers in IntuiNote)
+  graphData.value.labels = [1];
+  for (const i = ref(1); i.value < props.answers!.length; i.value++) {
+    graphData.value.labels.push(i.value+1);
 
-  // Used change colors
+  }
+  // add the number of answers for each one
+  graphData.value.datasets[0].data = props.nbanswers!;
+  // Change colors
   colors();
 }
 
-function colors(){
+function colors() {
   // SETTING OF COLORS
   const documentStyle = getComputedStyle(document.body);
-  // Used to alternate colors
-  let i = 1;
-  graphData.value.datasets[0].backgroundColor = props.correct!.map((n: number) => {
-    i += 1 % 5;
-    return n==1
-      //return n === receivedData.value.correct
-      ? documentStyle.getPropertyValue(`--green-${i}00`)
-      : documentStyle.getPropertyValue(`--red-${i}00`);
-  });
+  // If correct has at least one value
+  if (props.correct!.length>0){
+    let i = 1;
+    graphData.value.datasets[0].backgroundColor = props.correct!.map((n: number) => {
+      i += 1 % 5;
+      return n == 1
+          ? documentStyle.getPropertyValue(`--green-${i}00`) // correct answer
+          : documentStyle.getPropertyValue(`--red-${i}00`); // wrong answer
+    });
+  }else{ // if there is nothing in correct
+    let i = 1;
+    graphData.value.datasets[0].backgroundColor = props.answers!.map(() => {
+      i += 1 % 5;
+      return documentStyle.getPropertyValue(`--blue-${i}00`);
+    });
+  }
 }
 
-/// Hardcoded data (array of objects)
+/// Data of the graph
 const graphData = ref({
-  // X horizontal axis : The questions
+  // X horizontal axis : The answers
   labels: [] as number[],
   // Y vertical axis : The number of answers per question
   datasets: [{
@@ -58,16 +74,18 @@ const options = ref({
     },
   },
 });
+
+// if props change, the function "changeGraph" is called
 watch(props, changeGraph);
 </script>
 
 <template>
   <!-- GRAPH -->
   <Chart
-    ref="graphQuestion"
-    :data="graphData"
-    :options="options"
-    class="h-30rem"
-    type="pie"
+      ref="graphQuestion"
+      :data="graphData"
+      :options="options"
+      class="h-30rem"
+      type="pie"
   />
 </template>

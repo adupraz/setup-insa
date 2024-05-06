@@ -2,6 +2,7 @@
 import {ref} from 'vue';
 import QuizStruc from "~/components/QuizStruc.vue";
 import Comparaison from "~/components/Comparaison.vue";
+import SynchroGraphAP from "~/components/SynchroGraphAP.vue";
 
 const emit = defineEmits(['retour'])
 
@@ -50,7 +51,7 @@ function goBack(){
     </div>
 
     <div class="flexcolumn">
-      <SyncroGraph/>
+      <SynchroGraphAP :id_session="id_session"/>
       <!--      <div class="flexrow">-->
 <!--        <div class="a">-->
 <!--          <SyncroGraph/>-->

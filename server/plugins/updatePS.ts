@@ -1,36 +1,41 @@
-import { id_session } from "./fileFetch";
+import { id_sessions } from "./fileFetch";
 import { PrismaClient } from '@prisma/client';
 
-export default defineNitroPlugin((nitroApp) => {
+export default defineNitroPlugin(() => {
     const prisma = new PrismaClient();
 
     setInterval(() => {
-        if(id_session != "undefined") update(prisma); //ligne 236 => def of id_session when a session is created 
+        if(id_sessions.length != 0) {
+            console.log(id_sessions);update(prisma)}; //ligne 236 => def of id_session when a session is created 
     }, 10000);
 })
 
 async function update(prisma:PrismaClient){
-    let session = await prisma.session.findUnique({
-        where:{
-            id_session: id_session
-        }
-    })
-    if(session){
-        let dataRT = await prisma.data_Suivi_RT.findFirst({
+    for(let id_session of id_sessions){
+        let session = await prisma.session.findUnique({
             where:{
-                id_session:id_session, 
-                num_slide: session.current_slide
+                id_session: id_session
             }
         })
-        if(dataRT) prisma.data_Suivi_PS.create({
-            data:{
-                id_session: id_session,
-                num_slide: dataRT.num_slide,
-                index: dataRT.index,
-                list : dataRT.list,
-                date: getCurrentDateTime()
+        if(session){
+            let dataRT = await prisma.data_Suivi_RT.findFirst({
+                where:{
+                    id_session:id_session, 
+                    num_slide: session.current_slide
+                }
+            })
+            if(dataRT) {
+                await prisma.data_Suivi_PS.create({
+                    data:{
+                        id_session: id_session,
+                        num_slide: dataRT.num_slide,
+                        index: dataRT.index,
+                        list : dataRT.list,
+                        date: getCurrentDateTime()
+                    }
+                })
             }
-        })
+        }
     }
 }
 

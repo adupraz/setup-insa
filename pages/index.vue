@@ -41,7 +41,8 @@ function goDAP() {
        -->
       <navbar :id_user="id_user"
               @info_cours="(id:string,date:string,nb:number,name:string,s:string) => {cours.id_session=id; cours.date=date; cours.nb_student=nb; cours.name=name; cours.select=s; } "
-              @logout="(msg:boolean) => {connected = msg; cours.select='choisir';}"/>
+              @logout="(msg:boolean) => {connected = msg; cours.select='choisir';}"
+              @updateStudent="(n:number) => cours.nb_student=n"/>
       <!-- if no session has been chosen-->
       <h2 v-if="cours.select === 'choisir'"> Veuillez choisir un cours via l'icone en haut à gauche</h2>
       <!-- if a session was chosen but no dashboard-->

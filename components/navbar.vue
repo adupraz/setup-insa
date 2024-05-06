@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 // Definition of the message navbar will send to its parent
-const emit = defineEmits(['info_cours', "logout"])
+const emit = defineEmits(['info_cours', "logout", "updateStudent"])
 
 // Creation of an interface to store the information of one lesson
 interface Cours {
@@ -43,6 +43,7 @@ async function choixCours(id: string) {
   // Request to retrieve the information of the session selected and store its answer in data_cours
   const {data, pending, error, refresh} = await useFetch(`/session/${id}`);
   const data_cours = data.value;
+  if(data_cours!=null){
   // if there is no error, send the information of the session to its parents
   if (!('error' in data_cours!)) {
     const id = data_cours!.id_session;
@@ -54,12 +55,37 @@ async function choixCours(id: string) {
     emit('info_cours', "", "", 0, "", 'Erreur');
   }
 }
+}
+
+async function updatenbstudent(id: string){
+  console.log("function");
+  console.log(id);
+  const {data, pending, error, refresh} = await useFetch(`/session/${id}`);
+  const data_cours = data.value;
+  console.log(data_cours);
+  if(data_cours!=null){
+  // if there is no error, send the information of the session to its parents
+  if (!('error' in data_cours!)) {
+    console.log(data_cours!.nb_student);
+    emit ('updateStudent', data_cours!.nb_student);
+  }
+}
+}
 
 function logout() {
   console.log("TODO : logout with the server");
   // Inform the parent that the user is deconnected
   emit("logout", false);
 }
+
+onMounted(() => {
+  // to call the function "recoverSynchronisation" every 1min (=60000ms)
+  const interval = window.setInterval(()=>{updatenbstudent(selectCours.value)}, 10000);
+  // before unmount, clear interval
+  onBeforeUnmount(()=>{
+    window.clearInterval(interval);
+  });
+})
 </script>
 
 <template>

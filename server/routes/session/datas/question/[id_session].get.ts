@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
   if (id_session !== null && id_session !== undefined) {
     id_session_string = id_session.toString();
-    console.log("id_session : " ,id_session_string)
+    console.log("id_session for : " ,id_session_string)
   }
   try {
     // to get a data_question with our service

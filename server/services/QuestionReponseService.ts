@@ -66,6 +66,7 @@ class QuestionReponseService {
           id_session : idSession
         }
       });
+      console.log(questions)
       const res : Data_question[] = [];
 
       for (const question of questions) {
@@ -79,17 +80,20 @@ class QuestionReponseService {
           //Creation of list_repartition according to list_responses and list_tdr
           for (let i = 0; i < question.list_tdr.length; i++) {
             const response = question.list_responses[i];
+          
             const index = question.answers_id.indexOf(response)
-            const tdr = question.list_tdr[i];
-            
-            if (tdr < 30){
-              res_repartition[index][0]++;
-            }
-            else if (tdr >= 30 && tdr < 120) {
-              res_repartition[index][1]++;
-            }
-            else{
-              res_repartition[index][2]++;
+            if (index > 0){
+              const tdr = question.list_tdr[i];
+              console.log("index : " + index)
+              if (tdr < 30){
+                res_repartition[index][0]++;
+              }
+              else if (tdr >= 30 && tdr < 120) {
+                res_repartition[index][1]++;
+              }
+              else{
+                res_repartition[index][2]++;
+              }
             }
           }
         res.push(new Data_question(question.id, question.num_slide, question.id_session, question.list, question.answers_id, question.id_question, question.question_url, question.list_tdr, question.right_answers, question.type, res_repartition));

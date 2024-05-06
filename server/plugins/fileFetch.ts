@@ -64,7 +64,7 @@ export default function fileFetch() {
             if(verb == "select" || "start") insertSession(str,verb, prisma)
             if(type == "QCM" || type == "QCU") insertQCM_QCU(str,verb,prisma);
             if(verb == "access") insertSync(str, prisma)
-            if(verb == "unshare") delSession(str) 
+            if(verb == "unshare") delSession(str,prisma) 
             else{
                 console.log("error no path for now")
             }
@@ -388,16 +388,17 @@ async function insertSync(str:any, prisma:PrismaClient){
                 })
             }
             if(!data && str.object.currentSection){
-            await prisma.data_Suivi_RT.create({
-                        data:{
-                            id_session : session.id_session,
-                            id_slides : [str.object.currentSection],
-                            num_slide : Number(str.object.currentSectionTitle),
-                            id_slide : str.object.currentSection,
-                            index : [Number(str.object.currentSectionTitle)],
-                            list: [0]
-                        }
-                    })   
+                console.log("new data sync created")
+                await prisma.data_Suivi_RT.create({
+                    data:{
+                        id_session : session.id_session,
+                        id_slides : [str.object.currentSection],
+                        num_slide : Number(str.object.currentSectionTitle),
+                        id_slide : str.object.currentSection,
+                        index : [Number(str.object.currentSectionTitle)],
+                        list: [0]
+                    }
+                })   
             }
             if(old_Data){
                 await prisma.data_Suivi_RT.updateMany({
@@ -469,6 +470,11 @@ function updateData(data: any,str:any, firstConnexion:boolean):any{
     return data
 }
 
-function delSession(str:any){
-    if(id_sessions.includes(str.courseSessionId)) id_sessions = id_sessions.filter(item => item !== str.courseSessionId);
+async function delSession(str:any, prisma: PrismaClient){
+    let actor = await prisma.user.findUnique({
+        where:{
+            id_user: str.actor
+        }   
+    })
+    if(id_sessions.includes(str.courseSessionId) && actor) id_sessions = id_sessions.filter(item => item !== str.courseSessionId);
 }

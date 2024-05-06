@@ -92,6 +92,10 @@ class SynchroService {
           index_data = i;
         }
       }
+
+      console.log("index : "+elt_data_suivi_PS.index);
+      console.log("list : "+elt_data_suivi_PS.list);
+
     
       if (!present){
         //If the data of a slide doesn't exist, we put it in the result
@@ -108,18 +112,49 @@ class SynchroService {
       }
       else{
         //Else we do a mean of all the datas of synchronisation
-        if (res_datas_suivi_ps[index_data].list.length != elt_data_suivi_PS.list.length){
+        const means:number[] = [];
+        const new_index: number[] = [];
+        let counter_index: number = 0;
+
+        for(let i = 0; i < elt_data_suivi_PS.index.length; i++){
+          if(res_datas_suivi_ps[index_data].index.includes(elt_data_suivi_PS.index[i])){
+            const index = res_datas_suivi_ps[index_data].index.indexOf(elt_data_suivi_PS.index[i]);
+            const mean = (elt_data_suivi_PS.list[i] + res_datas_suivi_ps[index_data].list[index] * res_datas_suivi_ps[index_data].nb_datas)/(1 + res_datas_suivi_ps[index_data].nb_datas);
+            means.push(mean);
+          }
+          //if not present in the old data we simply add it to the data
+          else{
+            means.push(elt_data_suivi_PS.list[i]);
+          }
+          new_index[i] = elt_data_suivi_PS.index[i];
+        }
+        //Add the elements only present in the old data
+        for (let j = 0; j < res_datas_suivi_ps[index_data].index.length; j++){
+          if(!elt_data_suivi_PS.index.includes(res_datas_suivi_ps[index_data].index[j])){
+            means.push(res_datas_suivi_ps[index_data].list[j]);
+            new_index.push(res_datas_suivi_ps[index_data].index[j]);
+          }
+        }
+
+        res_datas_suivi_ps[index_data].list = means;
+        res_datas_suivi_ps[index_data].index = new_index;
+        res_datas_suivi_ps[index_data].nb_datas++;
+
+
+
+/*         if (res_datas_suivi_ps[index_data].list.length != elt_data_suivi_PS.list.length){
           console.error("Lists of the same slide should have the same number of slides in the synchronization list.")
         }
         else{
           const means:number[] = [];
+
           for (let i = 0; i<res_datas_suivi_ps[index_data].list.length;i++){
             const mean = (elt_data_suivi_PS.list[i] + res_datas_suivi_ps[index_data].list[i] * res_datas_suivi_ps[index_data].nb_datas)/(1 + res_datas_suivi_ps[index_data].nb_datas);
             means.push(mean);
           }
           res_datas_suivi_ps[index_data].list = means;
           res_datas_suivi_ps[index_data].nb_datas++;
-        }
+        } */
       }
     }
 
@@ -128,13 +163,34 @@ class SynchroService {
       let retard: number = 0;
       let current: number = 0;
       let early: number = 0;
-      current = elt.list[elt.num_slide];
 
-      for (let i = 0; i < elt.num_slide; i++) {
-        retard += elt.list[i];
+      /*
+      const index = elt.index.indexOf(elt.num_slide);
+      current = elt.list[index];
+
+      for(let i = 0; i<elt.index.length; i++){
+        let id = elt.index.indexOf(i);
+        if (elt.list[id]<elt.num_slide){
+          retard+=elt.list[id];
+        }
+        else if (elt.list[id]<elt.num_slide){
+          early+=elt.list[id];
+        }
       }
-      for (let i = elt.num_slide + 1; i < elt.list.length; i++) {
-        early += elt.list[i];
+      */
+
+      let i=0;
+      for(const num_slide_students of elt.index){
+        if(num_slide_students < elt.num_slide){
+          retard += elt.list[i]
+        }
+        else if(num_slide_students > elt.num_slide){
+          early += elt.list[i]
+        }
+        else if(num_slide_students == elt.num_slide){
+          current += elt.list[i]
+        }
+        i++; 
       }
 
       elt.retard = retard;
@@ -145,6 +201,7 @@ class SynchroService {
     //Creation of the table of all the number of slides
     const res_slides = [];
     const nb_slides = res_datas_suivi_ps.length;
+    //for()
     for (let i = 0; i<nb_slides;i++){
       res_slides[i] = i+1;
     }

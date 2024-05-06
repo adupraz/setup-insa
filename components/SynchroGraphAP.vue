@@ -40,6 +40,9 @@ const data_synchro=ref({
 // Recover the synchronisation from one session and store its result in list_question
 
 const {data, pending, error, refresh} = await useFetch(`/session/datas/suivi/posteriori/${props.id_session}`);
+console.log("data.value");
+console.log(data.value);
+
 if(data.value!=null){
     if(!('error' in data.value!)){
       data_synchro.value.labels =  data.value!.slides;

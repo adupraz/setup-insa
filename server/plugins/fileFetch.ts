@@ -6,6 +6,7 @@ import { isNumber } from 'chart.js/helpers';
 
 export let id_sessions:string[] = []
 const mutex = new Mutex();
+const mutex2 = new Mutex();
 
 
 export default function fileFetch() {
@@ -357,97 +358,100 @@ function update_list_responses(founded:number[], student_answer:any):string[]{
 }
 //Sync beetween teacher/student => 2 cases, if teacher switch slide (1) or if student switch slide (2)
 async function insertSync(str:any, prisma:PrismaClient){
-    let session
-    if(str.courseSessionId){
-        session = await prisma.session.findFirst({
-            where : {
-                id_session : str.courseSessionId
-            }
-        })
-    }
-    let data
-    //(1)
-    if(str.context.actorStatus == "teacher" && session && isNumber(Number(str.object.currentSectionTitle))&&str.context.currentView.type != "Tab"){
-        console.log("teacher move to : " + str.object.currentSectionTitle)
-        let old_Data
-        if(session){
-            data = await prisma.data_Suivi_RT.findFirst({
-                where:{
-                    id_session : session.id_session,
-                    num_slide: Number(str.object.currentSectionTitle)
+    const release = await mutex2.acquire();
+    try{
+        let session
+        if(str.courseSessionId){
+            session = await prisma.session.findFirst({
+                where : {
+                    id_session : str.courseSessionId
                 }
             })
-            old_Data = await prisma.data_Suivi_RT.findFirst({
+        }
+        let data
+        //(1)
+        if(str.context.actorStatus == "teacher" && session && isNumber(Number(str.object.currentSectionTitle))&&str.context.currentView.type != "Tab"){
+            console.log("teacher move to : " + str.object.currentSectionTitle)
+            let old_Data
+            if(session){
+                data = await prisma.data_Suivi_RT.findFirst({
+                    where:{
+                        id_session : session.id_session,
+                        num_slide: Number(str.object.currentSectionTitle)
+                    }
+                })
+                old_Data = await prisma.data_Suivi_RT.findFirst({
+                    where:{
+                        id_session : session.id_session,
+                        num_slide: session.current_slide
+                    }
+                })
+            }
+            if(!data && str.object.currentSection){
+            await prisma.data_Suivi_RT.create({
+                        data:{
+                            id_session : session.id_session,
+                            id_slides : [str.object.currentSection],
+                            num_slide : Number(str.object.currentSectionTitle),
+                            id_slide : str.object.currentSection,
+                            index : [Number(str.object.currentSectionTitle)],
+                            list: [0]
+                        }
+                    })   
+            }
+            if(old_Data){
+                await prisma.data_Suivi_RT.updateMany({
+                where:{
+                    id_session:session.id_session,
+                    num_slide: Number(str.object.currentSectionTitle)
+                },
+                data:{
+                    id_slides : old_Data.id_slides,
+                    id_slide : str.object.currentSection,
+                    index : old_Data.index,
+                    list: old_Data.list
+                    }
+                }) 
+            }
+            await prisma.session.update({
+                where:{
+                    id_session: session.id_session
+                },
+                data:{
+                    current_slide : Number(str.object.currentSectionTitle)
+                }
+            })
+        }
+        //(2)
+        if(str.context.actorStatus == "student" && session && isNumber(Number(str.object.currentSectionTitle)) && (str.context.currentView.type != "ViewQuiz" &&str.context.currentView.type != "ViewWhiteBoard"&&str.context.currentView.type != "ViewNoteBook"&&str.context.currentView.type != "Tab")){
+            console.log("student move to : " + str.object.currentSectionTitle)
+            data = await prisma.data_Suivi_RT.findFirst({
                 where:{
                     id_session : session.id_session,
                     num_slide: session.current_slide
                 }
             })
-        }
-        if(!data && str.object.currentSection){
-           await prisma.data_Suivi_RT.create({
-                    data:{
-                        id_session : session.id_session,
-                        id_slides : [str.object.currentSection],
-                        num_slide : Number(str.object.currentSectionTitle),
-                        id_slide : str.object.currentSection,
-                        index : [Number(str.object.currentSectionTitle)],
-                        list: [0]
-                    }
-                })   
-        }
-        if(old_Data){
-            await prisma.data_Suivi_RT.updateMany({
-            where:{
-                id_session:session.id_session,
-                num_slide: Number(str.object.currentSectionTitle)
-            },
-            data:{
-                id_slides : old_Data.id_slides,
-                id_slide : str.object.currentSection,
-                index : old_Data.index,
-                list: old_Data.list
+            console.log("found session and data for student")
+            let firstConnexion = false
+            if(str.context.currentView.type == "DialogSelectBag"){
+                firstConnexion = true
+            }
+            let new_data
+            if(data) new_data = updateData(data, str, firstConnexion)
+            if(new_data)
+            await prisma.data_Suivi_RT.update({
+                where:{
+                    id : new_data.id
+                },
+                data:{
+                    list: new_data.list,
+                    id_slides: new_data.id_slides,
+                    index : new_data.index
                 }
-            }) 
+            })
         }
-        await prisma.session.update({
-            where:{
-                id_session: session.id_session
-            },
-            data:{
-                current_slide : Number(str.object.currentSectionTitle)
-            }
-        })
-    }
-    //(2)
-    if(str.context.actorStatus == "student" && session && isNumber(Number(str.object.currentSectionTitle)) && (str.context.currentView.type != "ViewQuiz" &&str.context.currentView.type != "ViewWhiteBoard"&&str.context.currentView.type != "ViewNoteBook"&&str.context.currentView.type != "Tab")){
-        console.log("student move to : " + str.object.currentSectionTitle)
-        data = await prisma.data_Suivi_RT.findFirst({
-            where:{
-                id_session : session.id_session,
-                num_slide: session.current_slide
-            }
-        })
-        console.log("found session and data for student")
-        let firstConnexion = false
-        if(str.context.currentView.type == "DialogSelectBag"){
-            firstConnexion = true
-        }
-        let new_data
-        if(data) new_data = updateData(data, str, firstConnexion)
-        if(new_data)
-        await prisma.data_Suivi_RT.update({
-            where:{
-                id : new_data.id
-            },
-            data:{
-                list: new_data.list,
-                id_slides: new_data.id_slides,
-                index : new_data.index
-            }
-        })
-
-    }
+    } 
+    finally{release()} 
 }
 
 function updateData(data: any,str:any, firstConnexion:boolean):any{

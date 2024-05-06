@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { getCurrentDateTime } from './updatePS';
 import { getSharedValue } from '../sharedvalue';
-
+import { Mutex } from 'async-mutex';
 import { isNumber } from 'chart.js/helpers';
 
 export let id_sessions:string[] = []
+const mutex = new Mutex();
+
 
 export default function fileFetch() {
     const prisma = new PrismaClient();
@@ -18,8 +20,9 @@ export default function fileFetch() {
         }
         isFetchingData = true; // Set to true to indicate the start of the operation
 
+        const release = await mutex.acquire();        
         try {
-        // Read the file            
+        // Read the file    
             for (const block of (await getSharedValue())) {
                 //console.log("printblock")
                 //yconsole.log(block)
@@ -39,6 +42,10 @@ export default function fileFetch() {
         } catch (error) {
             console.error('An error occurred:', error);
             isFetchingData = false; // Set back to false in case of error
+            release()
+        }
+        finally{
+            release()
         }
     }
     // Function to insert into the database

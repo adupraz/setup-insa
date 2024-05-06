@@ -368,7 +368,7 @@ async function insertSync(str:any, prisma:PrismaClient){
     let data
     //(1)
     if(str.context.actorStatus == "teacher" && session && isNumber(Number(str.object.currentSectionTitle))&&str.context.currentView.type != "Tab"){
-        console.log("teacher move to : " + str.str.object.currentSectionTitle)
+        console.log("teacher move to : " + str.object.currentSectionTitle)
         let old_Data
         if(session){
             data = await prisma.data_Suivi_RT.findFirst({
@@ -421,7 +421,7 @@ async function insertSync(str:any, prisma:PrismaClient){
     }
     //(2)
     if(str.context.actorStatus == "student" && session && isNumber(Number(str.object.currentSectionTitle)) && (str.context.currentView.type != "ViewQuiz" &&str.context.currentView.type != "ViewWhiteBoard"&&str.context.currentView.type != "ViewNoteBook"&&str.context.currentView.type != "Tab")){
-        console.log("student move to : " + str.str.object.currentSectionTitle)
+        console.log("student move to : " + str.object.currentSectionTitle)
         data = await prisma.data_Suivi_RT.findFirst({
             where:{
                 id_session : session.id_session,
